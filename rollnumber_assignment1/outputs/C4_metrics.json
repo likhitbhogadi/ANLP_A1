@@ -1,0 +1,11 @@
+{
+  "bit_accuracy": 0.21051473500562592,
+  "sequence_accuracy": 0.1,
+  "levenshtein": 26.233333333333334,
+  "bleu": 0.09770532132607095,
+  "rouge1": 0.2785714285714286,
+  "rougeL": 0.2785714285714286,
+  "train_time_sec": 15.727023601531982,
+  "peak_mem_mb": 0.0,
+  "num_params": 186212
+}

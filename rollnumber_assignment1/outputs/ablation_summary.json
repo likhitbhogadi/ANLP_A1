@@ -1,0 +1,54 @@
+{
+  "C1": {
+    "bit_accuracy": 0.19527347781217752,
+    "sequence_accuracy": 0.1,
+    "levenshtein": 12.6,
+    "bleu": 0.09305952206447164,
+    "rouge1": 0.2574074074074074,
+    "rougeL": 0.2574074074074074,
+    "train_time_sec": 16.6010479927063,
+    "peak_mem_mb": 0.0,
+    "num_params": 186980
+  },
+  "C2": {
+    "bit_accuracy": 0.21928964568283454,
+    "sequence_accuracy": 0.1,
+    "levenshtein": 10.1,
+    "bleu": 0.1556988579045609,
+    "rouge1": 0.3646825396825397,
+    "rougeL": 0.3646825396825397,
+    "train_time_sec": 17.517159461975098,
+    "peak_mem_mb": 0.0,
+    "num_params": 186980
+  },
+  "C3": {
+    "bit_accuracy": 0.22074303405572757,
+    "sequence_accuracy": 0.2,
+    "levenshtein": 11.433333333333334,
+    "bleu": 0.08836861997885302,
+    "rouge1": 0.24761904761904763,
+    "rougeL": 0.24761904761904763,
+    "train_time_sec": 16.98094868659973,
+    "peak_mem_mb": 0.0,
+    "num_params": 162020
+  },
+  "C4": {
+    "bit_accuracy": 0.21051473500562592,
+    "sequence_accuracy": 0.1,
+    "levenshtein": 26.233333333333334,
+    "bleu": 0.09770532132607095,
+    "rouge1": 0.2785714285714286,
+    "rougeL": 0.2785714285714286,
+    "train_time_sec": 15.727023601531982,
+    "peak_mem_mb": 0.0,
+    "num_params": 186212
+  },
+  "C5": {
+    "bit_accuracy": 0.07434591380411813,
+    "sequence_accuracy": 0.0,
+    "levenshtein": 13.1,
+    "train_time_sec": 19.382749795913696,
+    "peak_mem_mb": 0.0,
+    "num_params": 318338
+  }
+}
