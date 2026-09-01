@@ -154,14 +154,12 @@ class LocalDecoder(nn.Module):
         cond = patch_hidden.reshape(B * n_patches, 1, D)
 
         for t in range(self.patch_size):
-            x = self.byte_emb(
-                torch.cat([cur, torch.zeros(B * n_patches, self.patch_size - 1 - t, dtype=torch.long, device=device)], dim=1)
-                if t > 0 else cur
-            )
-            pad_len = self.patch_size - x.size(1)
+            pad_len = self.patch_size - cur.size(1)
             if pad_len > 0:
-                x = torch.cat([x, torch.zeros(B * n_patches, pad_len, D, device=device)], dim=1)
-            x = x + self.local_pos
+                inp_ids = torch.cat([cur, torch.zeros(B * n_patches, pad_len, dtype=torch.long, device=device)], dim=1)
+            else:
+                inp_ids = cur
+            x = self.byte_emb(inp_ids) + self.local_pos
             causal = self.causal_mask
             for layer in self.self_layers:
                 h = layer.norm1(x)
@@ -179,3 +177,4 @@ class LocalDecoder(nn.Module):
                 cur = torch.cat([cur, next_byte.unsqueeze(1)], dim=1)
 
         return generated.view(B, n_patches * self.patch_size)
+
