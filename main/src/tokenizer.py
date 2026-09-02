@@ -84,8 +84,31 @@ class BPETokenizer:
                 i += 1
         return tuple(merged)
 
-    def train(self, corpus: List[str]):
+    def get_avg_token_len(self) -> float:
+        """Returns average character length of tokens in vocabulary (excluding special tokens)."""
+        valid_tokens = [tok for tok in self.token_to_id.keys() if tok not in SPECIAL_TOKENS]
+        if not valid_tokens:
+            return 0.0
+        return sum(len(tok) for tok in valid_tokens) / len(valid_tokens)
+
+    def get_compression_ratio(self, corpus: List[str]) -> Tuple[float, float]:
+        """Returns (compression_ratio, avg_sequence_length) over a corpus.
+        compression_ratio = total_raw_chars / total_subword_tokens.
+        """
+        total_raw_chars = 0
+        total_tokens = 0
+        for text in corpus:
+            total_raw_chars += len(text)
+            toks = self.tokenize(text)
+            total_tokens += len(toks)
+        avg_seq_len = total_tokens / max(1, len(corpus))
+        comp_ratio = total_raw_chars / max(1, total_tokens)
+        return comp_ratio, avg_seq_len
+
+    def train(self, corpus: List[str], name: str = "BPE", verbose: bool = True):
         """Learn merges from a list of raw strings (bit-strings or plaintext lines)."""
+        if verbose:
+            print(f"[{name}] Extracting word frequencies from {len(corpus)} corpus samples...", flush=True)
         word_freqs = self._get_word_freqs(corpus)
 
         base_symbols = set()
@@ -93,17 +116,27 @@ class BPETokenizer:
             base_symbols.update(word)
 
         num_merges_target = max(0, self.vocab_size - len(SPECIAL_TOKENS) - len(base_symbols))
+        if verbose:
+            print(f"[{name}] Starting BPE training: base_vocab={len(base_symbols)}, target_merges={num_merges_target}, target_vocab={self.vocab_size}", flush=True)
 
         self.merges = []
-        for _ in range(num_merges_target):
+        log_interval = max(1, num_merges_target // 10)
+
+        for step in range(num_merges_target):
             pair_stats = self._get_pair_stats(word_freqs)
             if not pair_stats:
+                if verbose:
+                    print(f"[{name}] Early stop at step {step}: no more merge pairs available.", flush=True)
                 break
-            best_pair = max(pair_stats.items(), key=lambda kv: kv[1])[0]
+            best_pair, freq = max(pair_stats.items(), key=lambda kv: (kv[1], kv[0]))
             self.merges.append(best_pair)
             word_freqs = {
-                self._merge_word(word, best_pair): freq for word, freq in word_freqs.items()
+                self._merge_word(word, best_pair): f for word, f in word_freqs.items()
             }
+            if verbose and ((step + 1) % log_interval == 0 or (step + 1) == num_merges_target):
+                pct = ((step + 1) / max(1, num_merges_target)) * 100
+                pair_str = f"'{best_pair[0]}' + '{best_pair[1]}'"
+                print(f"  └─ [{name}] Merge {step + 1}/{num_merges_target} ({pct:.0f}%) | Pair: {pair_str} (freq: {freq})", flush=True)
 
         self.merge_ranks = {pair: i for i, pair in enumerate(self.merges)}
 
@@ -116,6 +149,10 @@ class BPETokenizer:
 
         self.token_to_id = {tok: i for i, tok in enumerate(vocab)}
         self.id_to_token = {i: tok for tok, i in self.token_to_id.items()}
+
+        if verbose:
+            comp_ratio, avg_len = self.get_compression_ratio(corpus[:min(1000, len(corpus))])
+            print(f"[{name}] BPE Finished! Final Vocab: {self.vocab_size_actual} | Avg Token Chars: {self.get_avg_token_len():.2f} | Sample Compression: {comp_ratio:.2f}x (Avg Tokens/Seq: {avg_len:.1f})\n", flush=True)
 
     # ------------------------------------------------------------------ #
     # Encoding / decoding

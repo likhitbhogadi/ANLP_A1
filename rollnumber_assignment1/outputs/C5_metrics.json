@@ -1,8 +1,0 @@
-{
-  "bit_accuracy": 0.07434591380411813,
-  "sequence_accuracy": 0.0,
-  "levenshtein": 13.1,
-  "train_time_sec": 19.382749795913696,
-  "peak_mem_mb": 0.0,
-  "num_params": 318338
-}

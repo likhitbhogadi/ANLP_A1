@@ -13,10 +13,11 @@ Two dataset flavours are provided:
         integer symbol sequences (no vocabulary / subword tokenization at
         all), padded to a multiple of `patch_size`.
 """
+import os
 import json
 import csv
 import random
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Optional
 
 import torch
 from torch.utils.data import Dataset
@@ -24,26 +25,49 @@ from torch.utils.data import Dataset
 from .tokenizer import BPETokenizer
 
 
-def load_pairs(path: str) -> List[Dict[str, str]]:
+def load_pairs(path: Optional[str] = None, cipher_path: Optional[str] = None, plain_path: Optional[str] = None) -> List[Dict[str, str]]:
+    if cipher_path and plain_path:
+        with open(cipher_path, "r", encoding="utf-8") as fc, open(plain_path, "r", encoding="utf-8") as fp:
+            c_lines = [line.strip() for line in fc]
+            p_lines = [line.strip() for line in fp]
+        assert len(c_lines) == len(p_lines), f"Mismatch in line counts: cipher ({len(c_lines)}) vs plain ({len(p_lines)})"
+        return [{"ciphertext": c, "plaintext": p} for c, p in zip(c_lines, p_lines) if c and p]
+
+    if not path:
+        raise ValueError("Must provide either path or both cipher_path and plain_path")
+
+    if os.path.isdir(path):
+        c_path = os.path.join(path, "brown_cipher.txt")
+        p_path = os.path.join(path, "brown_plain.txt")
+        if not os.path.exists(c_path):
+            c_path = os.path.join(path, "cipher.txt")
+            p_path = os.path.join(path, "plain.txt")
+        return load_pairs(cipher_path=c_path, plain_path=p_path)
+
+    if "," in path:
+        c_p, p_p = path.split(",", 1)
+        return load_pairs(cipher_path=c_p.strip(), plain_path=p_p.strip())
+
     if path.endswith(".jsonl"):
         rows = []
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
                 if line:
                     rows.append(json.loads(line))
         return rows
     elif path.endswith(".json"):
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             data = json.load(f)
         return data if isinstance(data, list) else data["data"]
     elif path.endswith(".csv") or path.endswith(".tsv"):
         delim = "\t" if path.endswith(".tsv") else ","
-        with open(path, newline="") as f:
+        with open(path, newline="", encoding="utf-8") as f:
             reader = csv.DictReader(f, delimiter=delim)
             return list(reader)
     else:
-        raise ValueError(f"Unsupported dataset file extension for: {path}")
+        raise ValueError(f"Unsupported dataset file extension or path format for: {path}")
+
 
 
 def train_val_test_split(rows, val_frac=0.1, test_frac=0.1, seed=42):
