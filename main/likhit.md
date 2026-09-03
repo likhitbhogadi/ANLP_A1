@@ -1,6 +1,6 @@
-WANDB_API_KEY="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" ./run_V_FP.sh 2>&1 | tee run_V_FP.sh.log
+ ./run_V_FP.sh 2>&1 | tee run_V_FP.sh.log
 
-WANDB_API_KEY="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" ./run_c1.sh 2>&1 | tee run_c1.sh.log
+ ./run_c1.sh 2>&1 | tee run_c1.sh.log
 
 uv run python -m src.prepare_tokenizers --data_path data --src_vocab_size 256 --tgt_vocab_size 1000 --output_dir outputs
 
@@ -25,13 +25,11 @@ uv run python -m src.train \
   --max_len 1024 \
   --use_wandb
 
-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
-
 chmod +x run_c1.sh
 ./run_c1.sh 2>&1 | tee outputs/run_c1.log
 
 
-WANDB_API_KEY="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" ./run_c1.sh 2>&1 | tee outputs/run_c1.log
+ ./run_c1.sh 2>&1 | tee outputs/run_c1.log
 
 
 ./run_c1.sh 2>&1 | tee outputs/run_c1.log
