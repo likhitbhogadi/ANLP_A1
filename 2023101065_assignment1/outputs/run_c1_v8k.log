@@ -1,0 +1,106 @@
+============================================================
+Starting standalone run: C1 (8k Vocab & Split Lengths)
+Device: CUDA_VISIBLE_DEVICES=2
+Batch Size: 64 | Epochs: 15 | Vocab: 8000
+============================================================
+[Hardware] Using GPU: NVIDIA RTX 5000 Ada Generation (CUDA_VISIBLE_DEVICES=2)
+wandb: Currently logged in as: likhitbhogadi (likhitbhogadi-iiit-hyderabad) to https://api.wandb.ai. Use `wandb login --relogin` to force relogin
+wandb: setting up run wun6ber9
+wandb: Tracking run with wandb version 0.22.3
+wandb: Run data is saved locally in /home/srijam/likhit/src/main/wandb/run-20260903_043625-wun6ber9
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run C1
+wandb: ⭐️ View project at https://wandb.ai/likhitbhogadi-iiit-hyderabad/anlp-a1-transformers
+wandb: 🚀 View run at https://wandb.ai/likhitbhogadi-iiit-hyderabad/anlp-a1-transformers/runs/wun6ber9
+[W&B] Initialized Weights & Biases run: C1 (URL: https://wandb.ai/likhitbhogadi-iiit-hyderabad/anlp-a1-transformers/runs/wun6ber9)
+[Tokenization] Loading pre-encoded tokenized datasets from disk cache...
+[C1] 9,700,160 parameters, tokenization=subword
+[C1] epoch 1/15 (26.7s) train_loss=7.9736 val_loss=7.2741 mem=3346.7MB
+[C1] epoch 2/15 (13.0s) train_loss=7.1270 val_loss=6.8600 mem=3346.7MB
+[C1] epoch 3/15 (13.5s) train_loss=6.5686 val_loss=6.2346 mem=3346.7MB
+[C1] epoch 4/15 (13.7s) train_loss=5.9897 val_loss=5.9960 mem=3347.0MB
+[C1] epoch 5/15 (12.7s) train_loss=5.6579 val_loss=5.8714 mem=3347.0MB
+[C1] epoch 6/15 (12.5s) train_loss=5.4472 val_loss=5.7865 mem=3347.3MB
+[C1] epoch 7/15 (12.4s) train_loss=5.2936 val_loss=5.7604 mem=3347.3MB
+[C1] epoch 8/15 (12.4s) train_loss=5.1746 val_loss=5.7377 mem=3347.3MB
+[C1] epoch 9/15 (13.0s) train_loss=5.0729 val_loss=5.7140 mem=3347.3MB
+[C1] epoch 10/15 (12.8s) train_loss=4.9837 val_loss=5.7007 mem=3347.3MB
+[C1] epoch 11/15 (12.4s) train_loss=4.9120 val_loss=5.6889 mem=3347.3MB
+[C1] epoch 12/15 (12.7s) train_loss=4.8522 val_loss=5.6820 mem=3347.3MB
+[C1] epoch 13/15 (12.8s) train_loss=4.8098 val_loss=5.6854 mem=3347.3MB
+[C1] epoch 14/15 (12.6s) train_loss=4.7799 val_loss=5.6823 mem=3347.3MB
+[C1] epoch 15/15 (12.7s) train_loss=4.7670 val_loss=5.6831 mem=3347.3MB
+[Evaluation] Decoding generated sequences...
+
+[Debug Sample 0]
+Target: opper Country State Forest before crossing the Sturgeon River in Loretto and passing into Menominee County
+Pred:   In the United States National League Baseball America RIDOT announced in the United States
+
+[Debug Sample 1]
+Target: was purchased by five members of the Suffolk Mills Group in November and plans for restoration were made The consortium consist
+Pred:   s the first time of the city s and a few hundred Queenslanders Flotilla and the city of the city s main event was a
+
+[Debug Sample 2]
+Target: hilam Life Insurance Company currently the largest life insurance company in the Philippines in terms of assets net worth invest
+Pred:   e of the city s most of the city s most important gods were also known as a few days of the city of the city of the
+
+[Debug Sample 3]
+Target: Australia was a member of the international coalition which contributed military forces to the Gulf War deploying a naval task g
+Pred:   In the th century AD to the British Army units to the th Infantry Regiment to the th Infantry Regiment to the th Infantry Regiment to the th Infantry Regiment to the th Infantry Regiment
+
+[Debug Sample 4]
+Target: dying of cancer Smith died less than a week later At the request of Andrew s widow Sam Brad delivered the eulogy at the memoria
+Pred:   the first time the first time the first time he was a second youngest Dodger pitcher in the first time he was the first time he was a second half of the first time he was a second half of the first time he was a
+[C1] test metrics & decoding tokenization stats:
+{
+  "bit_accuracy": 0.06346536854311417,
+  "sequence_accuracy": 0.0003866976024748647,
+  "levenshtein": 104.01817478731631,
+  "bleu": 0.01784452964535324,
+  "rouge1": 0.1502908897732281,
+  "rougeL": 0.13151675056453815,
+  "decoding_pred_avg_tokens": 48.0,
+  "decoding_target_avg_tokens": 27.571152358855375,
+  "decoding_token_fertility_ratio": 1.7409500834513807,
+  "decoding_subword_exact_match": 0.0,
+  "decoding_char_per_token": 2.7745794663573085,
+  "train_time_sec": 206.07718014717102,
+  "peak_mem_mb": 3347.26656,
+  "num_params": 9700160
+}
+wandb: updating run metadata
+wandb: uploading output.log; uploading wandb-summary.json
+wandb: uploading output.log; uploading config.yaml
+wandb: uploading history steps 16-16, summary, console lines 39-55
+wandb: 
+wandb: Run history:
+wandb:                               epoch ▁▁▂▃▃▃▄▅▅▅▆▇▇▇█
+wandb:                      epoch_time_sec █▁▂▂▁▁▁▁▁▁▁▁▁▁▁
+wandb:                         peak_mem_mb ▁▁▁▄▄██████████
+wandb:                   test/bit_accuracy ▁
+wandb:                           test/bleu ▁
+wandb:        test/decoding_char_per_token ▁
+wandb:       test/decoding_pred_avg_tokens ▁
+wandb:   test/decoding_subword_exact_match ▁
+wandb:     test/decoding_target_avg_tokens ▁
+wandb: test/decoding_token_fertility_ratio ▁
+wandb:                                 +11 ...
+wandb: 
+wandb: Run summary:
+wandb:                               epoch 15
+wandb:                      epoch_time_sec 12.65364
+wandb:                         peak_mem_mb 3347.26656
+wandb:                   test/bit_accuracy 0.06347
+wandb:                           test/bleu 0.01784
+wandb:        test/decoding_char_per_token 2.77458
+wandb:       test/decoding_pred_avg_tokens 48
+wandb:   test/decoding_subword_exact_match 0
+wandb:     test/decoding_target_avg_tokens 27.57115
+wandb: test/decoding_token_fertility_ratio 1.74095
+wandb:                                 +11 ...
+wandb: 
+wandb: 🚀 View run C1 at: https://wandb.ai/likhitbhogadi-iiit-hyderabad/anlp-a1-transformers/runs/wun6ber9
+wandb: ⭐️ View project at: https://wandb.ai/likhitbhogadi-iiit-hyderabad/anlp-a1-transformers
+wandb: Synced 5 W&B file(s), 0 media file(s), 0 artifact file(s) and 0 other file(s)
+wandb: Find logs at: ./wandb/run-20260903_043625-wun6ber9/logs
+[C1] saved checkpoint to outputs/C1_checkpoint.pt

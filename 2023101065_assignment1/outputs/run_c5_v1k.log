@@ -1,0 +1,130 @@
+============================================================
+Starting C5 run (BLT Token-Free)
+Device: CUDA_VISIBLE_DEVICES=1
+Batch Size: 64 | Epochs: 60 | Vocab: Byte-Level
+============================================================
+[Hardware] Using GPU: NVIDIA RTX 5000 Ada Generation (CUDA_VISIBLE_DEVICES=1)
+wandb: Currently logged in as: likhitbhogadi (likhitbhogadi-iiit-hyderabad) to https://api.wandb.ai. Use `wandb login --relogin` to force relogin
+wandb: setting up run 4wtt7z91
+wandb: Tracking run with wandb version 0.22.3
+wandb: Run data is saved locally in /home/srijam/likhit/src/main/wandb/run-20260903_072421-4wtt7z91
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run C5
+wandb: ⭐️ View project at https://wandb.ai/likhitbhogadi-iiit-hyderabad/anlp-a1-transformers
+wandb: 🚀 View run at https://wandb.ai/likhitbhogadi-iiit-hyderabad/anlp-a1-transformers/runs/4wtt7z91
+[W&B] Initialized Weights & Biases run: C5 (URL: https://wandb.ai/likhitbhogadi-iiit-hyderabad/anlp-a1-transformers/runs/4wtt7z91)
+
+--- Initializing Byte-Level (BLT) Datasets ---
+[C5] 7,573,762 parameters, tokenization=blt
+[C5] epoch 1/60 (24.0s) train_loss=3.1894 val_loss=2.1823 best_val=2.1823 mem=1003.4MB
+[C5] epoch 2/60 (16.2s) train_loss=2.6403 val_loss=1.6724 best_val=1.6724 mem=1003.4MB
+[C5] epoch 3/60 (14.4s) train_loss=2.2168 val_loss=1.1172 best_val=1.1172 mem=1003.4MB
+[C5] epoch 4/60 (15.4s) train_loss=1.6869 val_loss=0.3977 best_val=0.3977 mem=1003.4MB
+[C5] epoch 5/60 (14.7s) train_loss=1.3065 val_loss=0.2550 best_val=0.2550 mem=1003.4MB
+[C5] epoch 6/60 (16.1s) train_loss=1.1815 val_loss=0.2213 best_val=0.2213 mem=1003.4MB
+[C5] epoch 7/60 (16.3s) train_loss=1.1275 val_loss=0.1924 best_val=0.1924 mem=1003.4MB
+[C5] epoch 8/60 (14.0s) train_loss=1.0984 val_loss=0.1730 best_val=0.1730 mem=1003.4MB
+[C5] epoch 9/60 (15.0s) train_loss=1.0773 val_loss=0.1859 best_val=0.1730 mem=1003.4MB
+[C5] epoch 10/60 (16.0s) train_loss=1.0637 val_loss=0.1688 best_val=0.1688 mem=1003.4MB
+[C5] epoch 11/60 (15.9s) train_loss=1.0526 val_loss=0.1584 best_val=0.1584 mem=1003.4MB
+[C5] epoch 12/60 (15.7s) train_loss=1.0419 val_loss=0.1601 best_val=0.1584 mem=1003.4MB
+[C5] epoch 13/60 (15.9s) train_loss=1.0347 val_loss=0.1661 best_val=0.1584 mem=1003.4MB
+[C5] epoch 14/60 (15.8s) train_loss=1.0267 val_loss=0.1605 best_val=0.1584 mem=1003.4MB
+[C5] epoch 15/60 (16.0s) train_loss=1.0228 val_loss=0.1534 best_val=0.1534 mem=1003.4MB
+[C5] epoch 16/60 (16.0s) train_loss=1.0164 val_loss=0.1480 best_val=0.1480 mem=1003.4MB
+[C5] epoch 17/60 (16.6s) train_loss=1.0112 val_loss=0.1490 best_val=0.1480 mem=1003.4MB
+[C5] epoch 18/60 (16.0s) train_loss=1.0086 val_loss=0.1630 best_val=0.1480 mem=1003.4MB
+[C5] epoch 19/60 (15.7s) train_loss=1.0053 val_loss=0.1547 best_val=0.1480 mem=1003.4MB
+[C5] epoch 20/60 (15.7s) train_loss=1.0022 val_loss=0.1506 best_val=0.1480 mem=1003.4MB
+[C5] epoch 21/60 (16.6s) train_loss=0.9993 val_loss=0.1423 best_val=0.1423 mem=1003.4MB
+[C5] epoch 22/60 (16.0s) train_loss=0.9957 val_loss=0.1439 best_val=0.1423 mem=1003.4MB
+[C5] epoch 23/60 (16.3s) train_loss=0.9934 val_loss=0.1420 best_val=0.1420 mem=1003.4MB
+[C5] epoch 24/60 (15.9s) train_loss=0.9908 val_loss=0.1398 best_val=0.1398 mem=1003.4MB
+[C5] epoch 25/60 (15.8s) train_loss=0.9888 val_loss=0.1441 best_val=0.1398 mem=1003.4MB
+[C5] epoch 26/60 (15.8s) train_loss=0.9879 val_loss=0.1453 best_val=0.1398 mem=1003.4MB
+[C5] epoch 27/60 (15.8s) train_loss=0.9851 val_loss=0.1421 best_val=0.1398 mem=1003.4MB
+[C5] epoch 28/60 (15.9s) train_loss=0.9846 val_loss=0.1385 best_val=0.1385 mem=1003.4MB
+[C5] epoch 29/60 (16.0s) train_loss=0.9819 val_loss=0.1326 best_val=0.1326 mem=1003.4MB
+[C5] epoch 30/60 (16.3s) train_loss=0.9817 val_loss=0.1413 best_val=0.1326 mem=1003.4MB
+[C5] epoch 31/60 (16.4s) train_loss=0.9796 val_loss=0.1311 best_val=0.1311 mem=1003.4MB
+[C5] epoch 32/60 (15.9s) train_loss=0.9785 val_loss=0.1395 best_val=0.1311 mem=1003.4MB
+[C5] epoch 33/60 (15.8s) train_loss=0.9769 val_loss=0.1345 best_val=0.1311 mem=1003.4MB
+[C5] epoch 34/60 (16.5s) train_loss=0.9763 val_loss=0.1399 best_val=0.1311 mem=1003.4MB
+[C5] epoch 35/60 (16.1s) train_loss=0.9755 val_loss=0.1315 best_val=0.1311 mem=1003.4MB
+[C5] epoch 36/60 (16.3s) train_loss=0.9745 val_loss=0.1347 best_val=0.1311 mem=1003.4MB
+[C5] epoch 37/60 (16.1s) train_loss=0.9734 val_loss=0.1346 best_val=0.1311 mem=1003.4MB
+[C5] epoch 38/60 (14.7s) train_loss=0.9724 val_loss=0.1345 best_val=0.1311 mem=1003.4MB
+[C5] epoch 39/60 (15.0s) train_loss=0.9717 val_loss=0.1356 best_val=0.1311 mem=1003.4MB
+[C5] epoch 40/60 (14.6s) train_loss=0.9713 val_loss=0.1342 best_val=0.1311 mem=1003.4MB
+[C5] epoch 41/60 (15.4s) train_loss=0.9705 val_loss=0.1307 best_val=0.1307 mem=1003.4MB
+[C5] epoch 42/60 (16.0s) train_loss=0.9699 val_loss=0.1311 best_val=0.1307 mem=1003.4MB
+[C5] epoch 43/60 (13.9s) train_loss=0.9693 val_loss=0.1337 best_val=0.1307 mem=1003.4MB
+[C5] epoch 44/60 (13.9s) train_loss=0.9686 val_loss=0.1332 best_val=0.1307 mem=1003.4MB
+[C5] epoch 45/60 (13.5s) train_loss=0.9680 val_loss=0.1302 best_val=0.1302 mem=1003.4MB
+[C5] epoch 46/60 (13.6s) train_loss=0.9678 val_loss=0.1302 best_val=0.1302 mem=1003.4MB
+[C5] epoch 47/60 (13.6s) train_loss=0.9674 val_loss=0.1295 best_val=0.1295 mem=1003.4MB
+[C5] epoch 48/60 (13.1s) train_loss=0.9671 val_loss=0.1288 best_val=0.1288 mem=1003.4MB
+[C5] epoch 49/60 (12.4s) train_loss=0.9666 val_loss=0.1300 best_val=0.1288 mem=1003.4MB
+[C5] epoch 50/60 (13.3s) train_loss=0.9664 val_loss=0.1304 best_val=0.1288 mem=1003.4MB
+[C5] epoch 51/60 (13.7s) train_loss=0.9663 val_loss=0.1303 best_val=0.1288 mem=1003.4MB
+[C5] epoch 52/60 (13.2s) train_loss=0.9658 val_loss=0.1286 best_val=0.1286 mem=1003.4MB
+[C5] epoch 53/60 (14.2s) train_loss=0.9657 val_loss=0.1289 best_val=0.1286 mem=1003.4MB
+[C5] epoch 54/60 (13.4s) train_loss=0.9656 val_loss=0.1290 best_val=0.1286 mem=1003.4MB
+[C5] epoch 55/60 (13.2s) train_loss=0.9653 val_loss=0.1295 best_val=0.1286 mem=1003.4MB
+[C5] epoch 56/60 (13.5s) train_loss=0.9653 val_loss=0.1296 best_val=0.1286 mem=1003.4MB
+[C5] epoch 57/60 (13.9s) train_loss=0.9653 val_loss=0.1287 best_val=0.1286 mem=1003.4MB
+[C5] epoch 58/60 (13.4s) train_loss=0.9652 val_loss=0.1293 best_val=0.1286 mem=1003.4MB
+[C5] epoch 59/60 (13.3s) train_loss=0.9651 val_loss=0.1292 best_val=0.1286 mem=1003.4MB
+[C5] epoch 60/60 (13.1s) train_loss=0.9652 val_loss=0.1291 best_val=0.1286 mem=1003.4MB
+[C5] Loading best checkpoint (val_loss=0.1286) for evaluation
+[Evaluation] Decoding generated sequences...
+[C5] test metrics & decoding tokenization stats:
+{
+  "bit_accuracy": 0.9989485556706633,
+  "sequence_accuracy": 0.9389017788089714,
+  "levenshtein": 0.09358081979891725,
+  "decoding_pred_avg_tokens": 116.34068058778035,
+  "decoding_target_avg_tokens": 116.33990719257541,
+  "decoding_token_fertility_ratio": 1.0000066477206628,
+  "decoding_subword_exact_match": 0.9389017788089714,
+  "decoding_char_per_token": 1.0,
+  "train_time_sec": 913.8147094249725,
+  "peak_mem_mb": 1003.394048,
+  "num_params": 7573762
+}
+wandb: updating run metadata
+wandb: uploading output.log; uploading wandb-summary.json
+wandb: uploading wandb-summary.json; uploading config.yaml
+wandb: uploading history steps 61-61, summary, console lines 66-79
+wandb: 
+wandb: Run history:
+wandb:                               epoch ▁▁▁▁▁▂▂▂▂▃▃▃▃▃▃▄▄▄▄▅▅▅▅▅▅▆▆▆▆▆▆▇▇▇▇▇████
+wandb:                      epoch_time_sec █▂▃▂▃▂▃▃▃▃▃▄▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▂▂▂▂▁▁▂▂▂▂▂▂▂
+wandb:                         peak_mem_mb ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+wandb:                   test/bit_accuracy ▁
+wandb:        test/decoding_char_per_token ▁
+wandb:       test/decoding_pred_avg_tokens ▁
+wandb:   test/decoding_subword_exact_match ▁
+wandb:     test/decoding_target_avg_tokens ▁
+wandb: test/decoding_token_fertility_ratio ▁
+wandb:                    test/levenshtein ▁
+wandb:                                  +8 ...
+wandb: 
+wandb: Run summary:
+wandb:                               epoch 60
+wandb:                      epoch_time_sec 13.14386
+wandb:                         peak_mem_mb 1003.39405
+wandb:                   test/bit_accuracy 0.99895
+wandb:        test/decoding_char_per_token 1
+wandb:       test/decoding_pred_avg_tokens 116.34068
+wandb:   test/decoding_subword_exact_match 0.9389
+wandb:     test/decoding_target_avg_tokens 116.33991
+wandb: test/decoding_token_fertility_ratio 1.00001
+wandb:                    test/levenshtein 0.09358
+wandb:                                  +9 ...
+wandb: 
+wandb: 🚀 View run C5 at: https://wandb.ai/likhitbhogadi-iiit-hyderabad/anlp-a1-transformers/runs/4wtt7z91
+wandb: ⭐️ View project at: https://wandb.ai/likhitbhogadi-iiit-hyderabad/anlp-a1-transformers
+wandb: Synced 5 W&B file(s), 0 media file(s), 0 artifact file(s) and 0 other file(s)
+wandb: Find logs at: ./wandb/run-20260903_072421-4wtt7z91/logs
+[C5] saved checkpoint to outputs/C5_checkpoint.pt
