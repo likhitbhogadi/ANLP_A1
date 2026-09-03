@@ -25,13 +25,28 @@ from torch.utils.data import Dataset
 from .tokenizer import BPETokenizer
 
 
-def load_pairs(path: Optional[str] = None, cipher_path: Optional[str] = None, plain_path: Optional[str] = None) -> List[Dict[str, str]]:
+def load_pairs(path: Optional[str] = None, cipher_path: Optional[str] = None, plain_path: Optional[str] = None, chunk_size: int = 128) -> List[Dict[str, str]]:
     if cipher_path and plain_path:
         with open(cipher_path, "r", encoding="utf-8") as fc, open(plain_path, "r", encoding="utf-8") as fp:
             c_lines = [line.strip() for line in fc]
             p_lines = [line.strip() for line in fp]
         assert len(c_lines) == len(p_lines), f"Mismatch in line counts: cipher ({len(c_lines)}) vs plain ({len(p_lines)})"
-        return [{"ciphertext": c, "plaintext": p} for c, p in zip(c_lines, p_lines) if c and p]
+        
+        rows = []
+        for c, p in zip(c_lines, p_lines):
+            if not c or not p:
+                continue
+            
+            # Apply chunking while strictly maintaining the 8 bits = 1 char alignment
+            if chunk_size > 0:
+                for i in range(0, len(p), chunk_size):
+                    p_chunk = p[i : i + chunk_size]
+                    c_chunk = c[i * 8 : (i + len(p_chunk)) * 8]
+                    if p_chunk and c_chunk:
+                        rows.append({"ciphertext": c_chunk, "plaintext": p_chunk})
+            else:
+                rows.append({"ciphertext": c, "plaintext": p})
+        return rows
 
     if not path:
         raise ValueError("Must provide either path or both cipher_path and plain_path")
@@ -87,22 +102,22 @@ def train_val_test_split(rows, val_frac=0.1, test_frac=0.1, seed=42):
 # ---------------------------------------------------------------------- #
 class TokenizedSeq2SeqDataset(Dataset):
     def __init__(self, rows, src_tokenizer: BPETokenizer, tgt_tokenizer: BPETokenizer, max_len=256):
-        self.rows = rows
-        self.src_tok = src_tokenizer
-        self.tgt_tok = tgt_tokenizer
         self.max_len = max_len
+        self.encoded_data = []
+        
+        for row in rows:
+            src_ids = src_tokenizer.encode(row["ciphertext"])[: self.max_len]
+            tgt_ids = tgt_tokenizer.encode(row["plaintext"])[: self.max_len]
+            self.encoded_data.append({
+                "src_ids": torch.tensor(src_ids, dtype=torch.long),
+                "tgt_ids": torch.tensor(tgt_ids, dtype=torch.long),
+            })
 
     def __len__(self):
-        return len(self.rows)
+        return len(self.encoded_data)
 
     def __getitem__(self, idx):
-        row = self.rows[idx]
-        src_ids = self.src_tok.encode(row["ciphertext"])[: self.max_len]
-        tgt_ids = self.tgt_tok.encode(row["plaintext"])[: self.max_len]
-        return {
-            "src_ids": torch.tensor(src_ids, dtype=torch.long),
-            "tgt_ids": torch.tensor(tgt_ids, dtype=torch.long),
-        }
+        return self.encoded_data[idx]
 
 
 def make_tokenized_collate_fn(src_pad_id, tgt_pad_id):
@@ -129,24 +144,37 @@ def make_tokenized_collate_fn(src_pad_id, tgt_pad_id):
 # C5: raw byte/bit dataset for BLT (no tokenizer / vocabulary at all)
 # ---------------------------------------------------------------------- #
 class ByteSeq2SeqDataset(Dataset):
-    """
-    Ciphertext side: sequence of ints in {0, 1} (raw bits).
-    Plaintext side: sequence of ints in [0, 255] (raw byte / char codes),
-                    reserving ids 256/257 as BOS/EOS for the plaintext side
-                    (needed so the local decoder knows where to stop).
-    """
-
     PLAINTEXT_BOS = 256
     PLAINTEXT_EOS = 257
     PLAINTEXT_VOCAB = 258
 
     def __init__(self, rows, patch_size=4, max_len=512):
-        self.rows = rows
         self.patch_size = patch_size
         self.max_len = max_len
+        self.encoded_data = []
+
+        for row in rows:
+            bit_str = "".join([c for c in row["ciphertext"].strip() if c in "01"])
+            
+            byte_vals = []
+            for i in range(0, len(bit_str), 8):
+                chunk = bit_str[i:i+8]
+                if len(chunk) == 8: 
+                    byte_vals.append(int(chunk, 2))
+                    
+            byte_vals = byte_vals[: self.max_len]
+            chars = [self.PLAINTEXT_BOS] + [min(ord(c), 255) for c in row["plaintext"]][: self.max_len] + [self.PLAINTEXT_EOS]
+
+            byte_vals = self._pad_to_patch(byte_vals, pad_value=0)
+            chars = self._pad_to_patch(chars, pad_value=self.PLAINTEXT_EOS)
+
+            self.encoded_data.append({
+                "src_bytes": torch.tensor(byte_vals, dtype=torch.long),
+                "tgt_bytes": torch.tensor(chars, dtype=torch.long),
+            })
 
     def __len__(self):
-        return len(self.rows)
+        return len(self.encoded_data)
 
     def _pad_to_patch(self, seq: List[int], pad_value: int) -> List[int]:
         rem = len(seq) % self.patch_size
@@ -155,17 +183,7 @@ class ByteSeq2SeqDataset(Dataset):
         return seq
 
     def __getitem__(self, idx):
-        row = self.rows[idx]
-        bits = [int(c) for c in row["ciphertext"].strip() if c in "01"][: self.max_len]
-        chars = [self.PLAINTEXT_BOS] + [min(ord(c), 255) for c in row["plaintext"]][: self.max_len] + [self.PLAINTEXT_EOS]
-
-        bits = self._pad_to_patch(bits, pad_value=0)
-        chars = self._pad_to_patch(chars, pad_value=self.PLAINTEXT_EOS)
-
-        return {
-            "src_bytes": torch.tensor(bits, dtype=torch.long),
-            "tgt_bytes": torch.tensor(chars, dtype=torch.long),
-        }
+        return self.encoded_data[idx]
 
 
 def make_byte_collate_fn(patch_size, src_pad_value=0, tgt_pad_value=None):

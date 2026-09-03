@@ -158,18 +158,23 @@ class BPETokenizer:
     # Encoding / decoding
     # ------------------------------------------------------------------ #
     def _bpe_word(self, symbols: List[str]) -> List[str]:
-        symbols = list(symbols)
-        if not self.merge_ranks:
+        if not self.merges:
             return symbols
-        while len(symbols) > 1:
-            pairs = [(symbols[i], symbols[i + 1]) for i in range(len(symbols) - 1)]
-            ranked = [(self.merge_ranks[p], idx) for idx, p in enumerate(pairs) if p in self.merge_ranks]
-            if not ranked:
+        
+        word = tuple(symbols)
+        
+        # Optimized BPE application: Apply each learned merge sequentially.
+        # This reduces time complexity from O(L^2) to O(L * M).
+        for pair in self.merges:
+            if len(word) == 1:
                 break
-            _, merge_idx = min(ranked, key=lambda x: x[0])
-            a, b = symbols[merge_idx], symbols[merge_idx + 1]
-            symbols = symbols[:merge_idx] + [a + b] + symbols[merge_idx + 2:]
-        return symbols
+                
+            # Fast-fail: O(L) check in C before running the Python while-loop
+            s = set(word)
+            if pair[0] in s and pair[1] in s:
+                word = self._merge_word(word, pair)
+                
+        return list(word)
 
     def tokenize(self, text: str) -> List[str]:
         if self.use_word_boundary:

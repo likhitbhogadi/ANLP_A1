@@ -3,15 +3,14 @@ set -e
 
 PYTHON="${PYTHON:-python3}"
 
-CONFIG="C1"
+CONFIG="C4"
 DATA_PATH="data"
 CIPHER_PATH="data/brown_cipher.txt"
 PLAIN_PATH="data/brown_plain.txt"
 
-GPU_ID="${GPU_ID:-2}"
+GPU_ID="${GPU_ID:-0}"
 export CUDA_VISIBLE_DEVICES="$GPU_ID"
 
-# Match friend's hyperparameters exactly
 EPOCHS=60
 BATCH_SIZE=64
 LR=0.001
@@ -71,7 +70,7 @@ fi
 mkdir -p "$OUTPUT_DIR"
 
 echo "============================================================"
-echo "Starting C1 run (Xavier init + label smoothing + best ckpt)"
+echo "Starting C4 run (RMSNorm)"
 echo "Device: CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES"
 echo "Batch Size: $BATCH_SIZE | Epochs: $EPOCHS | Vocab: $VOCAB_SIZE"
 echo "============================================================"

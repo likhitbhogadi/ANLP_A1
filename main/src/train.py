@@ -29,7 +29,18 @@ from .dataset import (
 from .tokenizer import BPETokenizer
 from .models import TransformerConfig, Seq2SeqTransformer, BLTSeq2Seq
 from .utils import compute_metrics, plot_training_curves
+from torch.optim.lr_scheduler import LambdaLR
+import math
 
+
+def init_weights(model):
+    """Xavier/Glorot initialization for transformer weights.
+    Critical for proper gradient flow and convergence."""
+    for name, p in model.named_parameters():
+        if p.dim() > 1:
+            nn.init.xavier_uniform_(p)
+        elif 'bias' in name:
+            nn.init.zeros_(p)
 
 CONFIGS = {
     "C1": dict(positional_encoding="sinusoidal", attention_type="mha", norm_type="layernorm", tokenization="subword"),
@@ -50,52 +61,82 @@ def set_seed(seed):
 
 
 def build_datasets_tokenized(train_rows, val_rows, test_rows, args):
-    print("\n--- Starting Tokenizer Training ---", flush=True)
-    src_tok = BPETokenizer(vocab_size=args.src_vocab_size)
-    tgt_tok = BPETokenizer(vocab_size=args.tgt_vocab_size)
-    src_tok.train([r["ciphertext"] for r in train_rows], name="Src-BPE (Ciphertext)", verbose=True)
-    tgt_tok.train([r["plaintext"] for r in train_rows], name="Tgt-BPE (Plaintext)", verbose=True)
+    cache_path = os.path.join(args.output_dir, f"cached_tokenized_datasets_v{args.vocab_size}.pt")
+    
+    if os.path.exists(cache_path):
+        print("[Tokenization] Loading pre-encoded tokenized datasets from disk cache...", flush=True)
+        cached = torch.load(cache_path, weights_only=False)
+        collate = make_tokenized_collate_fn(cached["src_tok"].pad_id, cached["tgt_tok"].pad_id)
+        return cached["train_ds"], cached["val_ds"], cached["test_ds"], collate, cached["src_tok"], cached["tgt_tok"], cached["tok_metrics"]
+
+    src_path = os.path.join(args.output_dir, "src_tokenizer.json")
+    tgt_path = os.path.join(args.output_dir, "tgt_tokenizer.json")
+
+    # Safely extract text fields regardless of container format
+    sample = train_rows[0]
+    if isinstance(sample, dict):
+        src_key = next((k for k in ["src", "source", "cipher", "input"] if k in sample), list(sample.keys())[0])
+        tgt_key = next((k for k in ["tgt", "target", "plain", "output"] if k in sample), list(sample.keys())[1])
+        src_texts = [row[src_key] for row in train_rows]
+        tgt_texts = [row[tgt_key] for row in train_rows]
+    else:
+        src_texts = [row[0] for row in train_rows]
+        tgt_texts = [row[1] for row in train_rows]
+
+    # Train tokenizers if they don't exist yet
+    if not os.path.exists(src_path) or not os.path.exists(tgt_path):
+        print(f"\n--- Training New BPETokenizers ---", flush=True)
+        
+        # Source is binary, keep vocab small (256) to avoid slow bit-string merge bottlenecks
+        src_tok = BPETokenizer(vocab_size=256)
+        src_tok.train(src_texts, name="SrcBPE")
+        src_tok.save(src_path)
+
+        # Target uses full desired vocab size (8000) with word boundaries for proper English BPE
+        tgt_tok = BPETokenizer(vocab_size=args.vocab_size, use_word_boundary=True)
+        tgt_tok.train(tgt_texts, name="TgtBPE")
+        tgt_tok.save(tgt_path)
+    else:
+        print("\n--- Loading Pre-Trained Tokenizers ---", flush=True)
+        src_tok = BPETokenizer.load(src_path)
+        tgt_tok = BPETokenizer.load(tgt_path)
 
     print("[Tokenization] Pre-encoding datasets (train, val, test)...", flush=True)
-    train_ds = TokenizedSeq2SeqDataset(train_rows, src_tok, tgt_tok, max_len=args.max_len)
-    val_ds = TokenizedSeq2SeqDataset(val_rows, src_tok, tgt_tok, max_len=args.max_len)
-    test_ds = TokenizedSeq2SeqDataset(test_rows, src_tok, tgt_tok, max_len=args.max_len)
+    train_ds = TokenizedSeq2SeqDataset(train_rows, src_tok, tgt_tok, max_len=args.max_src)
+    val_ds = TokenizedSeq2SeqDataset(val_rows, src_tok, tgt_tok, max_len=args.max_src)
+    test_ds = TokenizedSeq2SeqDataset(test_rows, src_tok, tgt_tok, max_len=args.max_src)
     collate = make_tokenized_collate_fn(src_tok.pad_id, tgt_tok.pad_id)
-
-    src_texts = [r["ciphertext"] for r in train_rows]
-    tgt_texts = [r["plaintext"] for r in train_rows]
-    src_comp, src_avg_seq = src_tok.get_compression_ratio(src_texts)
-    tgt_comp, tgt_avg_seq = tgt_tok.get_compression_ratio(tgt_texts)
 
     tok_metrics = {
         "tokenizer/src_vocab_size": src_tok.vocab_size_actual,
         "tokenizer/tgt_vocab_size": tgt_tok.vocab_size_actual,
-        "tokenizer/src_num_merges": len(src_tok.merges),
-        "tokenizer/tgt_num_merges": len(tgt_tok.merges),
-        "tokenizer/src_avg_token_len": src_tok.get_avg_token_len(),
-        "tokenizer/tgt_avg_token_len": tgt_tok.get_avg_token_len(),
-        "tokenizer/src_compression_ratio": src_comp,
-        "tokenizer/tgt_compression_ratio": tgt_comp,
-        "tokenizer/src_avg_seq_len": src_avg_seq,
-        "tokenizer/tgt_avg_seq_len": tgt_avg_seq,
     }
 
-    print("=== Tokenization Training Summary Metrics ===")
-    for k, v in tok_metrics.items():
-        if isinstance(v, float):
-            print(f"  {k}: {v:.4f}")
-        else:
-            print(f"  {k}: {v}")
-    print("=============================================\n", flush=True)
+    # Save to disk cache
+    torch.save({
+        "train_ds": train_ds,
+        "val_ds": val_ds,
+        "test_ds": test_ds,
+        "src_tok": src_tok,
+        "tgt_tok": tgt_tok,
+        "tok_metrics": tok_metrics,
+    }, cache_path)
 
     return train_ds, val_ds, test_ds, collate, src_tok, tgt_tok, tok_metrics
 
-
 def build_datasets_byte(train_rows, val_rows, test_rows, args):
+    cache_path = os.path.join(args.output_dir, f"cached_byte_datasets_patch{args.blt_patch_size}_len{args.max_src}.pt")
+    
+    if os.path.exists(cache_path):
+        print("[Tokenization] Loading pre-encoded byte datasets from disk cache...", flush=True)
+        cached = torch.load(cache_path, weights_only=False)
+        collate = make_byte_collate_fn(args.blt_patch_size)
+        return cached["train_ds"], cached["val_ds"], cached["test_ds"], collate, cached["tok_metrics"]
+
     print("\n--- Initializing Byte-Level (BLT) Datasets ---", flush=True)
-    train_ds = ByteSeq2SeqDataset(train_rows, patch_size=args.blt_patch_size, max_len=args.max_len)
-    val_ds = ByteSeq2SeqDataset(val_rows, patch_size=args.blt_patch_size, max_len=args.max_len)
-    test_ds = ByteSeq2SeqDataset(test_rows, patch_size=args.blt_patch_size, max_len=args.max_len)
+    train_ds = ByteSeq2SeqDataset(train_rows, patch_size=args.blt_patch_size, max_len=args.max_src)
+    val_ds = ByteSeq2SeqDataset(val_rows, patch_size=args.blt_patch_size, max_len=args.max_src)
+    test_ds = ByteSeq2SeqDataset(test_rows, patch_size=args.blt_patch_size, max_len=args.max_src)
     collate = make_byte_collate_fn(args.blt_patch_size)
 
     tok_metrics = {
@@ -103,10 +144,19 @@ def build_datasets_byte(train_rows, val_rows, test_rows, args):
         "tokenizer/tgt_vocab_size": ByteSeq2SeqDataset.PLAINTEXT_VOCAB,
         "tokenizer/type": "BLT (Byte/Bit level)",
     }
+
+    # Save to disk cache (excluding the local function)
+    torch.save({
+        "train_ds": train_ds,
+        "val_ds": val_ds,
+        "test_ds": test_ds,
+        "tok_metrics": tok_metrics,
+    }, cache_path)
+
     return train_ds, val_ds, test_ds, collate, tok_metrics
 
 
-def run_epoch(model, loader, optimizer, device, tokenization, pad_id_for_loss=0, train=True):
+def run_epoch(model, loader, optimizer, device, tokenization, pad_id_for_loss=0, train=True, scheduler=None, clip_grad=1.0, label_smoothing=0.1):
     model.train() if train else model.eval()
     total_loss, n_batches = 0.0, 0
     ctx = torch.enable_grad() if train else torch.no_grad()
@@ -118,24 +168,30 @@ def run_epoch(model, loader, optimizer, device, tokenization, pad_id_for_loss=0,
                 tgt_out = batch["tgt_out"].to(device)
                 logits = model(src, tgt_in)
                 loss = nn.functional.cross_entropy(
-                    logits.reshape(-1, logits.size(-1)), tgt_out.reshape(-1), ignore_index=pad_id_for_loss
+                    logits.reshape(-1, logits.size(-1)), tgt_out.reshape(-1),
+                    ignore_index=pad_id_for_loss,
+                    label_smoothing=label_smoothing,
                 )
             else:  # blt
                 src = batch["src_bytes"].to(device)
                 tgt = batch["tgt_bytes"].to(device)
                 logits = model(src, tgt)
-                loss = nn.functional.cross_entropy(logits.reshape(-1, logits.size(-1)), tgt.reshape(-1))
+                loss = nn.functional.cross_entropy(
+                    logits.reshape(-1, logits.size(-1)), tgt.reshape(-1),
+                    label_smoothing=label_smoothing,
+                )
 
             if train:
                 optimizer.zero_grad()
                 loss.backward()
-                torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+                torch.nn.utils.clip_grad_norm_(model.parameters(), clip_grad)
                 optimizer.step()
+                if scheduler is not None:
+                    scheduler.step()
 
             total_loss += loss.item()
             n_batches += 1
     return total_loss / max(1, n_batches)
-
 
 @torch.no_grad()
 def evaluate_generation(model, loader, device, tokenization, tgt_tok=None, max_len=128):
@@ -155,8 +211,24 @@ def evaluate_generation(model, loader, device, tokenization, tgt_tok=None, max_l
                 pred_token_ids = gen[i].tolist()
                 target_ids = [t for t in tgt_out[i].tolist() if t != tgt_tok.pad_id]
 
+                # Truncate prediction at EOS token (exclude BOS at start and everything after EOS)
+                if tgt_tok.eos_id in pred_token_ids:
+                    eos_pos = pred_token_ids.index(tgt_tok.eos_id)
+                    pred_token_ids = pred_token_ids[:eos_pos]  # exclude EOS itself
+                # Remove BOS from predictions if present
+                if pred_token_ids and pred_token_ids[0] == tgt_tok.bos_id:
+                    pred_token_ids = pred_token_ids[1:]
+                # Also clean up target_ids (remove EOS)
+                if target_ids and target_ids[-1] == tgt_tok.eos_id:
+                    target_ids = target_ids[:-1]
+
                 pred_str = tgt_tok.decode(pred_token_ids)
                 tgt_str = tgt_tok.decode(target_ids)
+
+                if total_samples < 5:
+                    print(f"\n[Debug Sample {total_samples}]")
+                    print(f"Target: {tgt_str[:120]}")
+                    print(f"Pred:   {pred_str[:120]}")
                 
                 all_preds.append(pred_str)
                 all_targets.append(tgt_str)
@@ -202,8 +274,14 @@ def evaluate_generation(model, loader, device, tokenization, tgt_tok=None, max_l
     return all_preds, all_targets, decoding_tok_metrics
 
 
-def build_model(config_name, src_vocab_size, tgt_vocab_size, args, device):
+def build_model(config_name, src_vocab_size, tgt_vocab_size, args, device, tgt_tok=None):
     overrides = CONFIGS[config_name]
+    
+    # Safely extract special token IDs using your custom tokenizer properties
+    pad_id = tgt_tok.pad_id if tgt_tok else 0
+    bos_id = tgt_tok.bos_id if tgt_tok else 2
+    eos_id = tgt_tok.eos_id if tgt_tok else 3
+
     cfg = TransformerConfig(
         src_vocab_size=src_vocab_size,
         tgt_vocab_size=tgt_vocab_size,
@@ -214,37 +292,43 @@ def build_model(config_name, src_vocab_size, tgt_vocab_size, args, device):
         num_decoder_layers=args.num_layers,
         d_ff=args.d_ff,
         dropout=args.dropout,
-        max_len=args.max_len + 8,
+        max_len=max(args.max_src, args.max_tgt),  # <-- CHANGE THIS LINE
         blt_patch_size=args.blt_patch_size,
+        pad_id=pad_id,
+        bos_id=bos_id,
+        eos_id=eos_id,
         **overrides,
     )
     if cfg.tokenization == "subword":
         model = Seq2SeqTransformer(cfg)
     else:
-        model = BLTSeq2Seq(cfg, src_byte_vocab=2, tgt_byte_vocab=ByteSeq2SeqDataset.PLAINTEXT_VOCAB)
-    return model.to(device), cfg
-
+        model = BLTSeq2Seq(cfg, src_byte_vocab=src_vocab_size, tgt_byte_vocab=tgt_vocab_size)
+        
+    return model.to(device), cfg  # <-- ADD THIS LINE BACK
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", choices=list(CONFIGS.keys()), required=True)
-    parser.add_argument("--data_path", default="data", help="Directory, CSV/JSON/JSONL, or comma-separated cipher,plain paths")
-    parser.add_argument("--cipher_path", default=None, help="Path to brown_cipher.txt")
-    parser.add_argument("--plain_path", default=None, help="Path to brown_plain.txt")
-    parser.add_argument("--epochs", type=int, default=10)
-    parser.add_argument("--batch_size", type=int, default=32)
-    parser.add_argument("--lr", type=float, default=3e-4)
+    parser.add_argument("--data_path", default="data")
+    parser.add_argument("--cipher_path", default=None)
+    parser.add_argument("--plain_path", default=None)
+    parser.add_argument("--epochs", type=int, default=60)
+    parser.add_argument("--batch_size", type=int, default=64)
+    parser.add_argument("--lr", type=float, default=1e-3)
+    parser.add_argument("--warmup", type=int, default=1000)
+    parser.add_argument("--weight_decay", type=float, default=0.01)
+    parser.add_argument("--clip", type=float, default=1.0)
     parser.add_argument("--d_model", type=int, default=256)
     parser.add_argument("--num_heads", type=int, default=8)
     parser.add_argument("--num_kv_heads", type=int, default=2)
-    parser.add_argument("--num_layers", type=int, default=4)
+    parser.add_argument("--num_layers", type=int, default=3)
     parser.add_argument("--d_ff", type=int, default=1024)
     parser.add_argument("--dropout", type=float, default=0.1)
-    parser.add_argument("--max_len", type=int, default=256)
-    parser.add_argument("--src_vocab_size", type=int, default=512)
-    parser.add_argument("--tgt_vocab_size", type=int, default=512)
+    parser.add_argument("--max_src", type=int, default=192)
+    parser.add_argument("--max_tgt", type=int, default=48)
+    parser.add_argument("--vocab_size", type=int, default=8000)
     parser.add_argument("--blt_patch_size", type=int, default=4)
-    parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--output_dir", default="outputs")
     parser.add_argument("--use_wandb", action="store_true")
     parser.add_argument("--wandb_project", default="anlp-a1-seq2seq-crypto")
@@ -277,11 +361,12 @@ def main():
             train_rows, val_rows, test_rows, args
         )
         src_vocab_size, tgt_vocab_size = src_tok.vocab_size_actual, tgt_tok.vocab_size_actual
-        src_tok.save(os.path.join(args.output_dir, f"{args.config}_src_tokenizer.json"))
-        tgt_tok.save(os.path.join(args.output_dir, f"{args.config}_tgt_tokenizer.json"))
+        # src_tok.save(os.path.join(args.output_dir, f"{args.config}_src_tokenizer.json"))
+        # tgt_tok.save(os.path.join(args.output_dir, f"{args.config}_tgt_tokenizer.json"))
     else:
         train_ds, val_ds, test_ds, collate, tok_metrics = build_datasets_byte(train_rows, val_rows, test_rows, args)
-        src_vocab_size, tgt_vocab_size = 2, ByteSeq2SeqDataset.PLAINTEXT_VOCAB
+        # Updated to 256 to cover all 8-bit integer values (0-255)
+        src_vocab_size, tgt_vocab_size = 256, ByteSeq2SeqDataset.PLAINTEXT_VOCAB
 
     # Log tokenization metrics immediately to WandB
     if wandb_run is not None:
@@ -291,37 +376,83 @@ def main():
     val_loader = DataLoader(val_ds, batch_size=args.batch_size, shuffle=False, collate_fn=collate)
     test_loader = DataLoader(test_ds, batch_size=args.batch_size, shuffle=False, collate_fn=collate)
 
-    model, cfg = build_model(args.config, src_vocab_size, tgt_vocab_size, args, device)
+    model, cfg = build_model(args.config, src_vocab_size, tgt_vocab_size, args, device, tgt_tok)
+    init_weights(model)
     n_params = sum(p.numel() for p in model.parameters())
     print(f"[{args.config}] {n_params:,} parameters, tokenization={tokenization}", flush=True)
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, betas=(0.9, 0.98), eps=1e-9)
+    optimizer = torch.optim.AdamW(
+        model.parameters(), 
+        lr=args.lr, 
+        betas=(0.9, 0.98), 
+        weight_decay=args.weight_decay
+    )
+
+    total_steps = args.epochs * len(train_loader)
+    warmup_steps = args.warmup
+
+    def lr_lambda(current_step):
+        if current_step < warmup_steps:
+            return float(current_step + 1) / float(max(1, warmup_steps))
+        progress = float(current_step - warmup_steps) / float(max(1, total_steps - warmup_steps))
+        return max(1e-4, 0.5 * (1.0 + math.cos(math.pi * progress)))
+
+    scheduler = LambdaLR(optimizer, lr_lambda)
 
     history = {"train_loss": [], "val_loss": []}
     pad_id_for_loss = tgt_tok.pad_id if tgt_tok is not None else 0
 
     peak_mem_mb = 0.0
+    best_val_loss = float('inf')
     t0 = time.time()
     for epoch in range(1, args.epochs + 1):
+        epoch_t0 = time.time()
         if device.type == "cuda":
             torch.cuda.reset_peak_memory_stats()
 
-        train_loss = run_epoch(model, train_loader, optimizer, device, tokenization, pad_id_for_loss, train=True)
-        val_loss = run_epoch(model, val_loader, optimizer, device, tokenization, pad_id_for_loss, train=False)
+        train_loss = run_epoch(model, train_loader, optimizer, device, tokenization, pad_id_for_loss, train=True, scheduler=scheduler, clip_grad=args.clip, label_smoothing=0.1)
+        val_loss = run_epoch(model, val_loader, optimizer, device, tokenization, pad_id_for_loss, train=False, scheduler=None, clip_grad=args.clip, label_smoothing=0.0)
+
+        epoch_time = time.time() - epoch_t0
 
         if device.type == "cuda":
             peak_mem_mb = max(peak_mem_mb, torch.cuda.max_memory_allocated() / 1e6)
 
         history["train_loss"].append(train_loss)
         history["val_loss"].append(val_loss)
-        print(f"[{args.config}] epoch {epoch}/{args.epochs} train_loss={train_loss:.4f} val_loss={val_loss:.4f}", flush=True)
+
+        # Save best model checkpoint based on val loss
+        if val_loss < best_val_loss:
+            best_val_loss = val_loss
+            best_ckpt_path = os.path.join(args.output_dir, f"{args.config}_checkpoint.pt")
+            torch.save({"model_state_dict": model.state_dict(), "config": vars(cfg)}, best_ckpt_path)
+
+        print(
+            f"[{args.config}] epoch {epoch}/{args.epochs} ({epoch_time:.1f}s) "
+            f"train_loss={train_loss:.4f} val_loss={val_loss:.4f} best_val={best_val_loss:.4f} mem={peak_mem_mb:.1f}MB",
+            flush=True,
+        )
 
         if wandb_run is not None:
-            wandb_run.log({"epoch": epoch, "train_loss": train_loss, "val_loss": val_loss, "peak_mem_mb": peak_mem_mb})
+            wandb_run.log({
+                "epoch": epoch,
+                "train_loss": train_loss,
+                "val_loss": val_loss,
+                "epoch_time_sec": epoch_time,
+                "peak_mem_mb": peak_mem_mb,
+            })
 
     train_time_sec = time.time() - t0
 
-    preds, targets, decoding_tok_metrics = evaluate_generation(model, test_loader, device, tokenization, tgt_tok, max_len=args.max_len)
+    # Load best model for evaluation
+    best_ckpt_path = os.path.join(args.output_dir, f"{args.config}_checkpoint.pt")
+    if os.path.exists(best_ckpt_path):
+        print(f"[{args.config}] Loading best checkpoint (val_loss={best_val_loss:.4f}) for evaluation", flush=True)
+        best_state = torch.load(best_ckpt_path, weights_only=False)
+        model.load_state_dict(best_state["model_state_dict"])
+
+    preds, targets, decoding_tok_metrics = evaluate_generation(model, test_loader, device, tokenization, tgt_tok, max_len=args.max_tgt)
+    
     metrics = compute_metrics(preds, targets, tokenized=(tokenization == "subword"))
     metrics.update(decoding_tok_metrics)
     metrics["train_time_sec"] = train_time_sec

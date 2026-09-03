@@ -131,7 +131,7 @@ class GroupedQueryAttention(nn.Module):
 
 
 class PositionwiseFeedForward(nn.Module):
-    def __init__(self, d_model, d_ff, dropout=0.1, activation="relu"):
+    def __init__(self, d_model, d_ff, dropout=0.1, activation="gelu"):
         super().__init__()
         self.fc1 = nn.Linear(d_model, d_ff)
         self.fc2 = nn.Linear(d_ff, d_model)

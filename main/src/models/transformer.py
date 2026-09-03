@@ -199,8 +199,11 @@ class Seq2SeqTransformer(nn.Module):
             causal = make_causal_mask(ys.size(1), device)
             logits = self.decoder(ys, memory, self_mask=causal, cross_mask=src_mask)
             next_token = logits[:, -1, :].argmax(dim=-1)
+            
+            # Force finished sequences to output padding token
             next_token = torch.where(finished, torch.full_like(next_token, self.cfg.pad_id), next_token)
             ys = torch.cat([ys, next_token.unsqueeze(1)], dim=1)
+            
             finished = finished | (next_token == self.cfg.eos_id)
             if finished.all():
                 break

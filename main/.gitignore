@@ -2,4 +2,7 @@
 /wandb
 /.venv
 **/__pycache__/
+/outputs/*.pt
+/outputs/*.json
+/data/*.txt
 
