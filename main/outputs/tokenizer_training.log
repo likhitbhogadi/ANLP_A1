@@ -1,0 +1,32 @@
+Training Source Tokenizer (Vocab Size: 256)...
+[Src-BPE] Extracting word frequencies from 25867 corpus samples...
+[Src-BPE] Starting BPE training: base_vocab=2, target_merges=250, target_vocab=256
+  └─ [Src-BPE] Merge 25/250 (10%) | Pair: '01' + '100101' (freq: 69203)
+  └─ [Src-BPE] Merge 50/250 (20%) | Pair: '100' + '0101' (freq: 28325)
+  └─ [Src-BPE] Merge 75/250 (30%) | Pair: '1100' + '0111' (freq: 15024)
+  └─ [Src-BPE] Merge 100/250 (40%) | Pair: '1110011' + '10000' (freq: 9301)
+  └─ [Src-BPE] Merge 125/250 (50%) | Pair: '100' + '01010000' (freq: 7331)
+  └─ [Src-BPE] Merge 150/250 (60%) | Pair: '11000100' + '100101' (freq: 5913)
+  └─ [Src-BPE] Merge 175/250 (70%) | Pair: '1000100' + '101' (freq: 4884)
+  └─ [Src-BPE] Merge 200/250 (80%) | Pair: '1110011' + '111101' (freq: 4134)
+  └─ [Src-BPE] Merge 225/250 (90%) | Pair: '11010101' + '101' (freq: 3511)
+  └─ [Src-BPE] Merge 250/250 (100%) | Pair: '1101101' + '10000' (freq: 3057)
+[Src-BPE] BPE Finished! Final Vocab: 256 | Avg Token Chars: 10.29 | Sample Compression: 7.91x (Avg Tokens/Seq: 118.7)
+
+Training Target Tokenizer (Vocab Size: 1000)...
+[Tgt-BPE] Extracting word frequencies from 25867 corpus samples...
+[Tgt-BPE] Starting BPE training: base_vocab=53, target_merges=943, target_vocab=1000
+  └─ [Tgt-BPE] Merge 94/943 (10%) | Pair: 'wi' + 'th ' (freq: 3634)
+  └─ [Tgt-BPE] Merge 188/943 (20%) | Pair: 'on' + 'g ' (freq: 1513)
+  └─ [Tgt-BPE] Merge 282/943 (30%) | Pair: 'ha' + 've ' (freq: 943)
+  └─ [Tgt-BPE] Merge 376/943 (40%) | Pair: 'i' + 'es ' (freq: 695)
+  └─ [Tgt-BPE] Merge 470/943 (50%) | Pair: 'in' + 'to ' (freq: 542)
+  └─ [Tgt-BPE] Merge 564/943 (60%) | Pair: 'si' + 'c ' (freq: 447)
+  └─ [Tgt-BPE] Merge 658/943 (70%) | Pair: 'bo' + 'th ' (freq: 381)
+  └─ [Tgt-BPE] Merge 752/943 (80%) | Pair: 'ou' + 't' (freq: 328)
+  └─ [Tgt-BPE] Merge 846/943 (90%) | Pair: 'ati' + 'on' (freq: 282)
+  └─ [Tgt-BPE] Merge 940/943 (100%) | Pair: 'for' + 'ces ' (freq: 251)
+  └─ [Tgt-BPE] Merge 943/943 (100%) | Pair: 'se' + 'qu' (freq: 250)
+[Tgt-BPE] BPE Finished! Final Vocab: 1000 | Avg Token Chars: 3.67 | Sample Compression: 2.84x (Avg Tokens/Seq: 41.4)
+
+Tokenizers successfully saved to outputs
