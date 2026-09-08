@@ -11,7 +11,6 @@ PLAIN_PATH="data/brown_plain.txt"
 GPU_ID="${GPU_ID:-2}"
 export CUDA_VISIBLE_DEVICES="$GPU_ID"
 
-# Match friend's hyperparameters exactly
 EPOCHS=60
 BATCH_SIZE=64
 LR=0.001
